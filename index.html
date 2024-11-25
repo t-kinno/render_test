@@ -1,3 +1,106 @@
-<script>
-    alert('test2')
-</script>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pointer Events API サンプル</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #container {
+            position: relative;
+            width: 600px;
+            height: 400px;
+            border: 2px solid #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .target {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background-color: #FF0000;
+        }
+        .obstacle {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            background-color: #0000FF;
+            left: 300px;
+            top: 100px;
+        }
+        .overlapping {
+            background-color: #00FF00 !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="target" class="target"></div>
+        <div id="obstacle" class="obstacle"></div>
+    </div>
+
+    <script>
+        const target = document.getElementById('target');
+        const obstacle = document.getElementById('obstacle');
+        let offsetX = 0;
+        let offsetY = 0;
+        let isDragging = false;
+
+        // Pointer down event: Start dragging
+        target.addEventListener('pointerdown', (event) => {
+            isDragging = true;
+            const rect = target.getBoundingClientRect();
+            offsetX = event.clientX - rect.left;
+            offsetY = event.clientY - rect.top;
+            target.setPointerCapture(event.pointerId);
+        });
+
+        // Pointer move event: Move the target element
+        target.addEventListener('pointermove', (event) => {
+            if (!isDragging) return;
+            const containerRect = document.getElementById('container').getBoundingClientRect();
+
+            // Ensure the target stays within the container
+            let newX = event.clientX - offsetX - containerRect.left;
+            let newY = event.clientY - offsetY - containerRect.top;
+            newX = Math.max(0, Math.min(newX, containerRect.width - target.offsetWidth));
+            newY = Math.max(0, Math.min(newY, containerRect.height - target.offsetHeight));
+
+            target.style.left = `${newX}px`;
+            target.style.top = `${newY}px`;
+
+            // Check for overlap
+            if (isOverlapping(target, obstacle)) {
+                obstacle.classList.add('overlapping');
+            } else {
+                obstacle.classList.remove('overlapping');
+            }
+        });
+
+        // Pointer up event: Stop dragging
+        target.addEventListener('pointerup', (event) => {
+            isDragging = false;
+            target.releasePointerCapture(event.pointerId);
+        });
+
+        // Function to check if two elements are overlapping
+        function isOverlapping(el1, el2) {
+            const rect1 = el1.getBoundingClientRect();
+            const rect2 = el2.getBoundingClientRect();
+            return !(
+                rect1.right < rect2.left ||
+                rect1.left > rect2.right ||
+                rect1.bottom < rect2.top ||
+                rect1.top > rect2.bottom
+            );
+        }
+    </script>
+</body>
+</html>
